@@ -7,7 +7,6 @@
   "license": "MIT",
   "dependencies": {
     "india-mutual-fund-info": "^1.0.1",
-    "mongoose": "^5.9.22",
-    "mongoose-unique-array": "^0.3.4"
+    "mongoose": "^5.9.22"
   }
 }
