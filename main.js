@@ -2,7 +2,7 @@ const nav = require('india-mutual-fund-info');
 const mongoose = require('mongoose');
 
 const MetaModel = mongoose.model('Meta', new mongoose.Schema({ lastUpdated: Date }));
-const MutualFundModel = mongoose.model('MutualFund', new mongoose.Schema({
+const MutualFundSchema = new mongoose.Schema({
     'Scheme Code': { type: String, index: true, unique: true },
     'ISIN Div Payout/ISIN Growth': String,
     'ISIN Div Reinvestment': String,
@@ -10,10 +10,12 @@ const MutualFundModel = mongoose.model('MutualFund', new mongoose.Schema({
     'AMC Name': String,
     'Scheme Type': String,
     'NAVs': [{
-        'Date': String,
+        '_id': String,
         'NAV': String
     }]
-}, { strict: 'false' }));
+},{strict:'false'});
+const MutualFundModel = mongoose.model('MutualFund', MutualFundSchema);
+
 
 class DbCreator {
 
@@ -54,40 +56,28 @@ class DbCreator {
                 uniques[item['Scheme Code']] = item;
                 uniques[item['Scheme Code']]['NAVs'] = [];
             }
-            uniques[item['Scheme Code']]['NAVs'].push({ 'Date': item['Date'], 'NAV': item['Net Asset Value'] });
+            uniques[item['Scheme Code']]['NAVs'].push({ '_id': item['Date'], 'NAV': item['Net Asset Value'] });
         }
         uniques = Object.values(uniques);
-        var count =0;
-        const session = await mongoose.startSession();
-        session.startTransaction();
-        try {
-            for (let item of uniques) {
-                const { NAVs, ...info } = item;
-                await MutualFundModel.updateOne({ 'Scheme Code': item['Scheme Code'] }, {
-                    ...info,
-                    $push: {
-                        'NAVs': { $each: NAVs }
-                    }
-                }, { upsert: true, session });
-                count+=1;
-            }
-            const date = to.getDate();
-            const month = to.getMonth() + 1;
-            const year = to.getFullYear();
-            await MetaModel.updateOne({},{
-                lastUpdated: `${year}-${month < 10 ? `0${month}` : month}-${date < 10 ? `0${date}` : date}T00:00:00.000Z`
-            }, { session });
-            await session.commitTransaction();
-            console.log(`Updated period ${this.dateStr(from)} - ${this.dateStr(to)}. ${count} documents updated in transaction.`);
+        var count = 0;
+
+        for (let item of uniques) {
+            const { NAVs, ...info } = item;
+            await MutualFundModel.updateOne({ 'Scheme Code': item['Scheme Code'] }, {
+                ...info,
+                $addToSet: {
+                    'NAVs': { $each: NAVs }
+                }
+            }, { upsert: true });
+            count += 1;
         }
-        catch (error) {
-            console.log(error);
-            await session.abortTransaction();
-            throw error;
-        }
-        finally {
-            session.endSession();
-        }
+        const date = to.getDate();
+        const month = to.getMonth() + 1;
+        const year = to.getFullYear();
+        await MetaModel.updateOne({}, {
+            lastUpdated: `${year}-${month < 10 ? `0${month}` : month}-${date < 10 ? `0${date}` : date}T00:00:00.000Z`
+        });
+        console.log(`Updated period ${this.dateStr(from)} - ${this.dateStr(to)}. ${count} documents updated in transaction.`);
     }
 
     async updateDB() {
@@ -104,5 +94,5 @@ class DbCreator {
 }
 
 
-const db = new DbCreator('mongodb://localhost:27017/portfolio-manager');
+const db = new DbCreator('mongodb://localhost:27017/portfolio-manager-2');
 db.updateDB();
