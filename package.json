@@ -5,6 +5,10 @@
   "main": "main.js",
   "author": "Harsimar Singh",
   "license": "MIT",
+   "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hrsimsin/amfi-database-creator.git"
+  },
   "dependencies": {
     "india-mutual-fund-info": "^1.0.1",
     "mongoose": "^5.9.22"
