@@ -1,6 +1,6 @@
 {
   "name": "amfi-database-creator",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Creates/Updates a MongoDB database with up-to date Mutual Fund data retrieved from AMFI portal.",
   "main": "main.js",
   "author": "Harsimar Singh",
