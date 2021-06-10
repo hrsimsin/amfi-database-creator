@@ -13,7 +13,7 @@ const MutualFundSchema = new mongoose.Schema({
         '_id': String,
         'NAV': String
     }]
-},{strict:'false'});
+}, { strict: 'false' });
 const MutualFundModel = mongoose.model('MutualFund', MutualFundSchema);
 
 
@@ -42,14 +42,7 @@ class DbCreator {
         return new Date(meta.lastUpdated);
     }
 
-    async update90() {
-        const lastUpdated = await this.getLastUpdated();
-        const now = new Date(Date.now());
-        const from = new Date(lastUpdated.getTime() + this.ms1Day);
-        const to = (now.getTime() - from.getTime() > 90 * this.ms1Day) ? new Date(from.getTime() + 90 * this.ms1Day) : now;
-
-        const data = await nav.history(from, to);
-
+    async persistData(data, updateDate) {
         var uniques = {};
         for (let item of data) {
             if (!(item['Scheme Code'] in uniques)) {
@@ -60,7 +53,6 @@ class DbCreator {
         }
         uniques = Object.values(uniques);
         var count = 0;
-
         for (let item of uniques) {
             const { NAVs, ...info } = item;
             await MutualFundModel.updateOne({ 'Scheme Code': item['Scheme Code'] }, {
@@ -71,13 +63,30 @@ class DbCreator {
             }, { upsert: true });
             count += 1;
         }
-        const date = to.getDate();
-        const month = to.getMonth() + 1;
-        const year = to.getFullYear();
+        const date = updateDate.getDate();
+        const month = updateDate.getMonth() + 1;
+        const year = updateDate.getFullYear();
         await MetaModel.updateOne({}, {
             lastUpdated: `${year}-${month < 10 ? `0${month}` : month}-${date < 10 ? `0${date}` : date}T00:00:00.000Z`
         });
+        return count;
+    }
+
+    async update90() {
+        const lastUpdated = await this.getLastUpdated();
+        const now = new Date(Date.now());
+        const from = new Date(lastUpdated.getTime());
+        const to = (now.getTime() - from.getTime() > 90 * this.ms1Day) ? new Date(from.getTime() + 90 * this.ms1Day) : now;
+        const data = await nav.history(from, to);
+        const count = await this.persistData(data, to);
         console.log(`Updated period ${this.dateStr(from)} - ${this.dateStr(to)}. ${count} documents updated in transaction.`);
+    }
+
+    async updateNavAll(){
+        const now = new Date(Date.now());
+        const data = await nav.today();
+        const count = await this.persistData(data,now);
+        console.log(`Updated NAVs for ${this.dateStr(now)}. ${count} documents updated in transaction.`);
     }
 
     async updateDB() {
@@ -85,6 +94,9 @@ class DbCreator {
         var lastUpdated = await this.getLastUpdated();
         console.log(`DB last updated on ${this.dateStr(lastUpdated)}`);
         var now = new Date(Date.now());
+        if(this.dateEquals(lastUpdated,now)){
+            await this.updateNavAll();
+        }
         while (!this.dateEquals(lastUpdated, now)) {
             await this.update90();
             lastUpdated = await this.getLastUpdated();
@@ -94,3 +106,6 @@ class DbCreator {
 }
 
 module.exports = DbCreator;
+
+const dbCreator = new DbCreator('mongodb://localhost:27017/portfolio-manager-2');
+dbCreator.updateDB();
