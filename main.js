@@ -106,6 +106,3 @@ class DbCreator {
 }
 
 module.exports = DbCreator;
-
-const dbCreator = new DbCreator('mongodb://localhost:27017/portfolio-manager-2');
-dbCreator.updateDB();
