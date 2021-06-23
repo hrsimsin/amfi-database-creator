@@ -14,6 +14,7 @@ const MutualFundSchema = new mongoose.Schema({
         'NAV': String
     }]
 }, { strict: 'false' });
+MutualFundSchema.index({'Scheme Name':'text'});
 const MutualFundModel = mongoose.model('MutualFund', MutualFundSchema);
 
 
