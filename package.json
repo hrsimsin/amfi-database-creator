@@ -1,21 +1,25 @@
 {
   "name": "amfi-database-creator",
-  "version": "1.0.4",
+  "version": "1.1.0",
   "description": "Creates/Updates a MongoDB database with up-to date Mutual Fund data retrieved from AMFI portal.",
   "main": "main.js",
   "author": "Harsimar Singh",
   "license": "MIT",
-   "repository": {
+  "repository": {
     "type": "git",
     "url": "git+https://github.com/hrsimsin/amfi-database-creator.git"
   },
   "dependencies": {
     "india-mutual-fund-info": "^1.0.1",
-    "mongoose": "^5.9.22"
+    "mongoose": "^5.12.14"
   },
   "bugs": {
     "url": "https://github.com/hrsimsin/amfi-database-creator/issues"
   },
   "homepage": "https://github.com/hrsimsin/amfi-database-creator#readme",
-  "keywords": ["AMFI","Mutual Fund","NAV"]
+  "keywords": [
+    "AMFI",
+    "Mutual Fund",
+    "NAV"
+  ]
 }
